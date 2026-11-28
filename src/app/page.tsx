@@ -19,8 +19,8 @@ const steps = [
     body: "Sign in and your agent gets its own key and tools. It works for your business only.",
   },
   {
-    title: "Save your six accounts",
-    body: "Your links, your AI key, and the services your agent uses. You earn credits at each step — 500 pieces in all.",
+    title: "Your agent sets itself up",
+    body: "Your Muse connects your links, your AI key, and the services it needs. It does the work — you just hand over a key when it asks. You earn credits as each one lands: 500 pieces in all.",
   },
   {
     title: "Approve the first piece",
@@ -83,7 +83,7 @@ export default function HomePage() {
 
         <section className="mt-20 rounded-[10px] border border-border bg-card px-5 py-12 text-center">
           <h2 className="font-display text-[30px] leading-tight font-extrabold">Busy is not a marketing plan.</h2>
-          <p className="mt-2.5 mb-6 text-muted-foreground">Your agent is. Set it up once, approve what it makes.</p>
+          <p className="mt-2.5 mb-6 text-muted-foreground">Your agent is. It sets itself up — you just approve what it makes.</p>
           <StartButton />
         </section>
       </main>
