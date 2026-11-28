@@ -258,7 +258,7 @@ export default function MuseWeekPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p>
-            Don&apos;t have a Muse yet? Join with invite code <strong>49YNE2</strong> — you get 1 billion tokens and
+            Don&apos;t have a Muse yet? Join with invite code <strong>S8IQY7</strong> — you get 1 billion tokens and
             so does the member who invited you (join within 48 hours of the invite for it to count).
           </p>
           <Button variant="outline" asChild>

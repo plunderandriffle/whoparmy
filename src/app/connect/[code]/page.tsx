@@ -58,7 +58,7 @@ are single use (spent at EXCHANGE) and expire after 24 hours. Do not retry it. D
 replacement.
 
 Tell your member, in your own words: "That connection link has
-expired — get a fresh one at https://whop.plunderandriffle.com/build
+expired — get a fresh one at https://whop.plunderandriffle.com/bridge-code
 and send me the new link." Then stop and wait for the fresh link.`}
       />
     );

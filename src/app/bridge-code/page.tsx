@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Copy, KeyRound, Loader2, Lock, ShieldOff } from "lucide-react";
-import { bridgeAgentBrief } from "@/lib/bridge-agent-brief";
+import { bridgeAgentBrief, permanentAgentBrief } from "@/lib/bridge-agent-brief";
 import { deriveWhopConnection, type WhopConnectionTone } from "@/lib/whop-connection";
 import { deriveWhopHeader } from "@/lib/whop-header";
 
@@ -22,6 +22,11 @@ interface SessionState {
   connected: boolean;
   mode?: string;
   user: { name?: string | null; whopUsername?: string | null; planName?: string | null; plan?: string | null } | null;
+}
+interface UpdateTokenStatus {
+  active: boolean;
+  createdAt: string | null;
+  lastUsedAt: string | null;
 }
 const WHOP_DOT_CLASS: Record<WhopConnectionTone, string> = {
   checking: "bg-muted-foreground", disconnected: "bg-red-500", connected: "bg-emerald-500", unlinked: "bg-amber-500",
@@ -55,6 +60,9 @@ export default function BridgeCodePage() {
   const [budgetCredits, setBudgetCredits] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [permanentStatus, setPermanentStatus] = useState<UpdateTokenStatus | null>(null);
+  const [permanentBrief, setPermanentBrief] = useState<string | null>(null);
+  const [permanentBusy, setPermanentBusy] = useState(true);
 
   const loadAccount = useCallback(async () => {
     const res = await fetch("/api/bridge/account");
@@ -80,6 +88,20 @@ export default function BridgeCodePage() {
     })();
   }, [loadAccount]);
 
+  const loadPermanentStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/bridge/update-token", { cache: "no-store" });
+      if (!res.ok) throw new Error("Could not read permanent connection status");
+      setPermanentStatus(await res.json() as UpdateTokenStatus);
+    } catch {
+      setPermanentStatus(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gate === "open") void loadPermanentStatus().finally(() => setPermanentBusy(false));
+  }, [gate, loadPermanentStatus]);
+
   const generateCode = async () => {
     setBusy(true);
     try {
@@ -99,6 +121,36 @@ export default function BridgeCodePage() {
   const revoke = async (tokenId: string) => {
     await fetch("/api/bridge/revoke", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tokenId }) });
     await loadAccount();
+  };
+
+  const generatePermanentConnection = async () => {
+    setPermanentBusy(true);
+    try {
+      const res = await fetch("/api/bridge/key-claim", { method: "POST" });
+      const json = (await res.json()) as { code?: string; token?: string; error?: string };
+      if (!res.ok || !json.code || !json.token) throw new Error(json.error || "Could not generate a permanent connection brief");
+      setPermanentBrief(permanentAgentBrief(json.code, json.token));
+      setCopied(null);
+      await loadPermanentStatus();
+    } catch (err) {
+      toast({ title: "Permanent connection failed", description: err instanceof Error ? err.message : "Try again", variant: "destructive" });
+    } finally { setPermanentBusy(false); }
+  };
+
+  const revokePermanentConnection = async () => {
+    setPermanentBusy(true);
+    try {
+      const res = await fetch("/api/bridge/update-token", { method: "DELETE" });
+      if (!res.ok) {
+        const json = (await res.json()) as { error?: string };
+        throw new Error(json.error || "Could not revoke the permanent connection");
+      }
+      setPermanentBrief(null);
+      await loadPermanentStatus();
+      toast({ title: "Update token and unclaimed code revoked" });
+    } catch (err) {
+      toast({ title: "Revocation failed", description: err instanceof Error ? err.message : "Try again", variant: "destructive" });
+    } finally { setPermanentBusy(false); }
   };
 
   const copy = async (label: string, value: string) => {
@@ -150,6 +202,25 @@ export default function BridgeCodePage() {
             <Button variant="outline" onClick={generateCode} disabled={busy}>{busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Fresh code (kills the old one)</Button>
           </>}
           <p className="text-muted-foreground">Give the code — or just the link — to your agent. The link shows the same instructions; viewing it does not use the code.</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="text-lg">Permanent connection — for your Muse</CardTitle></CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>{permanentStatus?.active
+            ? (permanentStatus.createdAt ? `Active since ${new Date(permanentStatus.createdAt).toLocaleDateString()}` : "Active")
+            : permanentStatus ? "Not set up yet" : permanentBusy ? "Checking status…" : "Could not read permanent connection status."}</p>
+          <Button onClick={generatePermanentConnection} disabled={permanentBusy}>Get my permanent connection</Button>
+          {permanentBrief && <>
+            <p>Give this brief to your Muse once. It claims a durable key and keeps it in its own secure storage — this connection does not expire weekly.</p>
+            <p className="text-amber-500">Anyone holding this brief can claim your key — give it only to your own agent.</p>
+            <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-4 text-xs leading-relaxed">{permanentBrief}</pre>
+            <Button variant="outline" onClick={() => copy("permanent", permanentBrief)}>{copied === "permanent" ? "Copied" : "Copy permanent connection brief"}</Button>
+          </>}
+          {permanentStatus?.active && <div className="space-y-2">
+            <Button variant="outline" onClick={revokePermanentConnection} disabled={permanentBusy}>Revoke permanent connection</Button>
+            <p className="text-muted-foreground">Revoking kills the update token and any unclaimed claim code. A key already claimed keeps working until the engine rotates it — revoke here stops future claims.</p>
+          </div>}
         </CardContent>
       </Card>
     </main>
