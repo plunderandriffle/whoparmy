@@ -90,7 +90,7 @@ export function QuizCard({ onDone }: { onDone: (view: string | null) => void }) 
                   </a>
                 </Button>
                 <Button asChild variant="outline">
-                  <a href="/muse-week">Connect your Muse here</a>
+                  <a href="/bridge-code">Connect your Muse here</a>
                 </Button>
               </>
             ) : (

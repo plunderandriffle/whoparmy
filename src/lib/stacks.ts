@@ -33,7 +33,7 @@ export interface Stack {
   bridgeScope: BridgeScope | null;
   /** The member-facing prompt, with {BRIDGE_CODE} filled at launch.
    *  May carry a {BUSINESS_URL} placeholder the operator/member fills
-   *  (the /muse-week page fills it from the brand profile today). */
+   *  (the retired /muse-week page filled it from the brand profile). */
   promptTemplate: string | null;
   /** Member page the stack lives on, or null. */
   entryPath: string | null;
@@ -49,7 +49,7 @@ You are my content agent, connected to my Plunder & Riffle account through my br
 3. **Quote me the week before you spend anything:** 7 day-packs (\`create_demo_pack\` — 5 memes, an iMessage, a Top 10 and a slideshow per day), one for each day, each on a different angle from the research: Day 1 my offer · Day 2 my customer's pain · Day 3 proof · Day 4 one product · Day 5 me vs. the alternative · Day 6 questions customers ask · Day 7 best-of + call to action. Tell me the exact credit cost and my remaining balance (check \`get_account\` through the bridge), and wait for my "go". No go, no spend.
 4. On my "go", make all 7 packs through the bridge (\`https://whop.plunderandriffle.com/api/bridge/mcp\`), polling \`get_job_status\` until each is done. A failed piece refunds — if a whole pack fails, tell me and retry it once.
 5. Deliver my week as a calendar: for each day, the pack's share-page link and what's in it. End with the receipt: credits spent, credits remaining. **Do not publish anything and do not render MP4s** — I'll approve the pieces I want first.
-6. When the week is delivered or my token expires, stop. Next week I'll get a fresh code from whop.plunderandriffle.com/muse-week.`;
+6. When the week is delivered or my token expires, stop. Next week I'll get a fresh code from https://whop.plunderandriffle.com/bridge-code.`;
 
 const CLIP_FACTORY_PROMPT = `**Make my clips**
 
@@ -132,13 +132,13 @@ export const STACKS: Stack[] = [
     id: "muse-week",
     name: "Muse Week",
     blurb:
-      "One command from /muse-week and the member's Muse makes a week of content (7 day-packs) on the member's own credits. No subscription needed to connect.",
+      "One command from /bridge-code and the member's Muse makes a week of content (7 day-packs) on the member's own credits. No subscription needed to connect.",
     status: "live",
     bridgeScope: "week",
     promptTemplate: MUSE_WEEK_PROMPT,
     entryPath: "/muse-week",
     infraNotes:
-      "The original bridge stack (shipped 2026-11-17). The launcher fills {BRIDGE_CODE} only — {BUSINESS_URL} is filled by the /muse-week page from the member's brand profile today, so replace it by hand when launching from here. Launcher mints at the week offer's server-side budget (805 list).",
+      "The original bridge stack (shipped 2026-11-17). The launcher fills {BRIDGE_CODE} only — {BUSINESS_URL} was filled by the retired /muse-week page from the member's brand profile, so replace it by hand when launching from here. Launcher mints at the week offer's server-side budget (805 list).",
   },
   {
     id: "btc-experiment",

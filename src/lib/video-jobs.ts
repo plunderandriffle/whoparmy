@@ -63,7 +63,7 @@ export function isAudioFormat(format: VideoFormat): boolean {
 }
 
 export const BYOK_AUDIO_MESSAGE =
-  "This format generates a voice track, and audio costs more than the 1-credit house lane covers — so voiced formats are BYOK-only. Make it from your own Muse instead: open the Muse connection (/muse-week) and ask for it there; it runs on your own key and credits there.";
+  "This format generates a voice track, and audio costs more than the 1-credit house lane covers — so voiced formats are BYOK-only. Make it from your own Muse instead: open the Muse connection (/bridge-code) and ask for it there; it runs on your own key and credits there.";
 
 export const VIDEO_FORMAT_LABELS: Record<VideoFormat, string> = {
   BEST_OF: "Best-of reel",

@@ -537,7 +537,7 @@ export async function exchangeBridgeCode(rawCode: string): Promise<{ token: stri
   const scope = scopeFromStored(row.scope);
   if (!scope) throw new BridgeError(400, "BAD_CODE", "That bridge code isn't valid.");
   if (row.expiresAt.getTime() <= Date.now()) {
-    const where = scope === "clips" ? "in the Clip Factory" : scope === "experiment" ? "at whop.plunderandriffle.com/bridge" : "on /muse-week";
+    const where = scope === "clips" ? "in the Clip Factory" : scope === "experiment" ? "at whop.plunderandriffle.com/bridge" : "on /bridge-code";
     throw new BridgeError(400, "BAD_CODE", `That bridge code expired. Generate a fresh one ${where}.`);
   }
   // Eligibility is re-checked at exchange, PER SCOPE: a member
@@ -690,7 +690,7 @@ export async function proxyToolCall(session: BridgeSession, name: string, args: 
   if (!bridgeToolAllowedForScope(session.scope, name)) {
     return toolError(
       session.scope === "clips"
-        ? `This clips connection cannot call ${name}. A Clip Factory connection runs create_sitdown plus research and account tools on the member's own credits; the week offer's content tools need their own /muse-week connection, and publishing and MP4 rendering stay with the member's approval inside Whoparmy. Allowed: ${[...BRIDGE_FREE_TOOLS, ...Object.keys(costs)].join(", ")}.`
+        ? `This clips connection cannot call ${name}. A Clip Factory connection runs create_sitdown plus research and account tools on the member's own credits; the week offer's content tools need their own /bridge-code connection, and publishing and MP4 rendering stay with the member's approval inside Whoparmy. Allowed: ${[...BRIDGE_FREE_TOOLS, ...Object.keys(costs)].join(", ")}.`
         : `The Muse bridge cannot call ${name}. It runs research and content generation on the member's own credits; publishing and MP4 rendering stay with the member's approval inside Whoparmy. Allowed: ${[...BRIDGE_FREE_TOOLS, ...Object.keys(costs)].join(", ")}.`,
     );
   }
@@ -795,7 +795,7 @@ export async function proxyToolCall(session: BridgeSession, name: string, args: 
       return toolError(
         session.scope === "clips"
           ? `This ${name} call would exceed this connection's approved budget (${session.budgetCredits} credits — the member's own balance when the connection was approved, ${reservation.spent} already spent or in flight). Nothing was charged. The member can approve a new clips connection in Whoparmy.`
-          : `This ${name} call would exceed the week's approved budget (${session.budgetCredits} credits, ${reservation.spent} already spent or in flight). Nothing was charged. The member can approve a new week budget on /muse-week.`,
+          : `This ${name} call would exceed the week's approved budget (${session.budgetCredits} credits, ${reservation.spent} already spent or in flight). Nothing was charged. The member can approve a new week budget on /bridge-code.`,
       );
     }
   }

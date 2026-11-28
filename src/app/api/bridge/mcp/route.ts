@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   if (tokenKind(token) === "update" && !canUseForMcp("update")) return rpcError(id, -32001, "The update token can’t generate content.", 403);
   const session = await verifyBridgeToken(token);
   if (!session) {
-    return rpcError(id, -32001, "Bridge token missing, expired or revoked. Generate a fresh code on /muse-week and exchange it again.", 401);
+    return rpcError(id, -32001, "Bridge token missing, expired or revoked. Generate a fresh code on /bridge-code and exchange it again.", 401);
   }
 
   try {
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
         if (session.scope !== "clips") {
           return rpcResult(id, {
             isError: true,
-            content: [{ type: "text", text: `${name} belongs to the Clip Factory connection. This is a /muse-week connection; clip tools need their own clips connection from the Clip Factory in Whoparmy.` }],
+            content: [{ type: "text", text: `${name} belongs to the Clip Factory connection. This is a /bridge-code connection; clip tools need their own clips connection from the Clip Factory in Whoparmy.` }],
           });
         }
         if (!hasLinkedCreditAccount(session.user)) {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json(
-    { error: "This MCP endpoint is POST-only. See https://whop.plunderandriffle.com/muse-week" },
+    { error: "This MCP endpoint is POST-only. See https://whop.plunderandriffle.com/bridge-code" },
     { status: 405 },
   );
 }
