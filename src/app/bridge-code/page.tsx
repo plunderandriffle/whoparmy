@@ -8,6 +8,7 @@ import { CheckCircle2, Copy, KeyRound, Loader2, Lock, ShieldOff } from "lucide-r
 import { bridgeAgentBrief, permanentAgentBrief } from "@/lib/bridge-agent-brief";
 import { deriveWhopConnection, type WhopConnectionTone } from "@/lib/whop-connection";
 import { deriveWhopHeader } from "@/lib/whop-header";
+import { TelegramLinkCard } from "@/components/factory/telegram-link";
 
 interface BridgeAccount {
   connected: boolean;
@@ -223,6 +224,8 @@ export default function BridgeCodePage() {
           </div>}
         </CardContent>
       </Card>
+      {/* Moved from /muse-week at Dave's order (2026-11-28). */}
+      <TelegramLinkCard />
     </main>
   );
 }

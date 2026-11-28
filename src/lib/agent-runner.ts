@@ -296,7 +296,7 @@ export async function runAgentJob(jobId: string): Promise<void> {
       const text =
         `THE ASSESSOR — BRIDGE HANDOFF\n` +
         `Whoparmy doesn't make this one. Your own Muse makes it, through your bridge, on your own Plunder & Riffle credits, and delivers it on your own pages. Nothing spends on the house key and nothing is generated inside Whoparmy.\n\n` +
-        `1) Get your bridge code: open https://whop.plunderandriffle.com/muse-week and generate your command. It runs on your own credits and needs at least 50 credits for one /before pack.\n` +
+        `1) Get your bridge code: open https://whop.plunderandriffle.com/bridge-code and generate your command. It runs on your own credits and needs at least 50 credits for one /before pack.\n` +
         `2) Paste the command below to your Muse, swapping {BRIDGE_CODE} for your fresh code (it expires in 24 hours and works once).\n` +
         `3) Your Muse quotes the run first and waits for your "go" before spending. The pack and the $999 offer come back from your Muse — approve them there.\n\n` +
         `── PASTE TO YOUR CLAUDE ──\n${command}\n── END ──`;
@@ -309,7 +309,7 @@ export async function runAgentJob(jobId: string): Promise<void> {
             result: JSON.stringify({
               text: text.slice(0, 20_000),
               provider: "bridge",
-              bridgeUrl: "https://whop.plunderandriffle.com/muse-week",
+              bridgeUrl: "https://whop.plunderandriffle.com/bridge-code",
             }),
           },
         }),

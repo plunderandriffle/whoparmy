@@ -318,7 +318,7 @@ export async function ralphAction(userId: string, locale: string, actionId: Ralp
         }
         const reason = err instanceof Error ? err.message : "the bridge is unreachable";
         return {
-          text: `I couldn't mint your command just now — ${reason} The /muse-week page is the other door, and it shows your live balance too. Taking you to Account.`,
+          text: `I couldn't mint your command just now — ${reason} The /bridge-code page is the other door, and it shows your live balance too. Taking you to Account.`,
           actions: ["my_plan", "make_content"],
           nav: { view: "account" },
         };

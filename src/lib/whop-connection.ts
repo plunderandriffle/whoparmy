@@ -1,5 +1,5 @@
 /**
- * Whop connection indicator — pure state derivation for /muse-week.
+ * Whop connection indicator — pure state derivation for /bridge-code.
  *
  * The indicator is driven ONLY by the two real responses the page
  * already fetches (Dave, 2026-11-24 — no invented state):
@@ -49,7 +49,7 @@ export function deriveWhopConnection(
     if (planName) text += ` · ${planName}`;
     if (typeof account.credits === "number") {
       // The bridge uses -1 as its unlimited sentinel (same convention
-      // the /muse-week credits card renders as "Unlimited").
+      // the bridge-code credits card renders as "Unlimited").
       text += account.credits === -1 ? " · Unlimited credits" : ` · ${account.credits} credits`;
     }
     // A member running on their own saved keys is marked as such —

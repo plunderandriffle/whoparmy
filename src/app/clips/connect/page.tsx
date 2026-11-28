@@ -60,7 +60,7 @@ export default function ConnectPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <p>
-            Open <code className="rounded bg-muted px-1 py-0.5 text-xs">/muse-week</code> and generate a
+            Open <code className="rounded bg-muted px-1 py-0.5 text-xs">/bridge-code</code> and generate a
             code. The code is shown once. Generating it also proves your engine link works, so a dead
             connection fails here instead of inside your agent.
           </p>
@@ -68,7 +68,7 @@ export default function ConnectPage() {
             No subscription is needed to connect your Muse. The code runs on your own engine credits, capped at your current balance.
           </p>
           <Button size="sm" variant="outline" asChild>
-            <a href="/muse-week">Open /muse-week</a>
+            <a href="/bridge-code">Open /bridge-code</a>
           </Button>
         </CardContent>
       </Card>
@@ -81,14 +81,14 @@ export default function ConnectPage() {
           <p>Your agent, not you, does this call:</p>
           <pre className="overflow-x-auto rounded bg-muted p-3 text-xs">
 {`POST https://whop.plunderandriffle.com/api/bridge/exchange
-{ "code": "the code from /muse-week" }
+{ "code": "the code from /bridge-code" }
 
 → { "bridge_token": "prb_…", "expires_at": "…",
     "budget_credits": 805, "mcp_url": "…/api/bridge/mcp" }`}
           </pre>
           <p className="text-xs text-muted-foreground">
             Seven days. It is not an engine key: it can only call the allowlisted tools, inside the budget,
-            and you can revoke it from /muse-week.
+            and you can revoke it from /bridge-code.
           </p>
         </CardContent>
       </Card>
