@@ -20,6 +20,8 @@ describe("safeReturnPath", () => {
   it("accepts the hand-off pages and keeps their query", () => {
     assert.equal(safeReturnPath("/claim?code=W1.abc.def"), "/claim?code=W1.abc.def");
     assert.equal(safeReturnPath("/bridge?ref=dave"), "/bridge?ref=dave");
+    assert.equal(safeReturnPath("/bridge-code"), "/bridge-code");
+    assert.equal(safeReturnPath("/bridge-code?from=teaser"), "/bridge-code?from=teaser");
     assert.equal(safeReturnPath("/"), "/");
   });
 

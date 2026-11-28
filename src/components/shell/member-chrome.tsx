@@ -42,6 +42,7 @@ function useConnected(): boolean {
 const NAV = [
   { href: "/spaces", label: "Spaces" },
   { href: "/build", label: "Build" },
+  { href: "/bridge-code", label: "Bridge code" },
   { href: "/town", label: "Town" },
   { href: "/agents", label: "Agents" },
 ];
