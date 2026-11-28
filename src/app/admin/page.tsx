@@ -5,6 +5,7 @@ import { getStacks, API_KEY_UNLOCKS } from "@/lib/stacks";
 import { AdminPanel } from "@/components/admin/admin-panel";
 import { GiftInvitesPanel } from "@/components/admin/gift-invites-panel";
 import { BtcRealPanel } from "@/components/admin/btc-real-panel";
+import { ByokRewardPanel } from "@/components/admin/byok-reward-panel";
 import { RotatorAdmin } from "@/components/bridge/rotator-admin";
 import { RotatorSummaryCard } from "@/components/admin/rotator-summary-card";
 import { SettlementsCard } from "@/components/admin/settlements-card";
@@ -129,6 +130,7 @@ export default async function AdminPage() {
       {/* BTC Experiment — Real BTC (Dave, 2026-11-21). Internal rails
           only; renders nothing unless the operator-gated API answers. */}
       <BtcRealPanel />
+      <ByokRewardPanel />
 
       {/* Whop Army 2.0 Slice 5: the public marketplace summary.
           Renders nothing unless the operator-only summary API answers. */}

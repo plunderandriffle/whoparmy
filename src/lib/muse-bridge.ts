@@ -10,6 +10,8 @@ import { publicUpdateTokenStatus, tokenKind } from "@/lib/update-token-core";
 import { BRIDGE_FREE_TOOLS, bridgeToolAllowedByTables, filterBridgeTools, withMissingBridgeTools } from "@/lib/bridge-tool-policy";
 export { BRIDGE_FREE_TOOLS } from "@/lib/bridge-tool-policy";
 import { byokViewFromUnlockPayload, type BridgeByokView } from "@/lib/bridge-byok";
+import type { ByokRewards } from "@/lib/byok-reward";
+import { syncByokRewards } from "@/lib/byok-reward-server";
 import { claimFreeDay, getFreeDay, getFreeDayForUser } from "@/lib/free-day-server";
 import { MarketplaceError } from "@/lib/marketplace-server";
 export type { BridgeByokView } from "@/lib/bridge-byok";
@@ -892,6 +894,7 @@ export interface BridgeAccountView {
    * page then keeps its plain allowance presentation.
    */
   byok: BridgeByokView | null;
+  rewards: ByokRewards | null;
   freeDay: Awaited<ReturnType<typeof getFreeDayForUser>>;
   brand: { name: string; website: string | null } | null;
   tokens: Array<{ id: string; budgetCredits: number; spentCredits: number; expiresAt: Date; active: boolean; scope: BridgeScope }>;
@@ -923,6 +926,7 @@ export async function getBridgeAccountView(user: User): Promise<BridgeAccountVie
     granted: 0,
     period: null,
     byok: null,
+    rewards: null,
     freeDay: await getFreeDayForUser(user.id).catch(() => null),
     brand: brand ?? null,
     tokens: tokens.map((t) => ({
@@ -955,6 +959,30 @@ export async function getBridgeAccountView(user: User): Promise<BridgeAccountVie
     // byok null and the view exactly as it was (getMemberByok never
     // throws).
     view.byok = await getMemberByok(member.key);
+    try {
+      const shared = bridgeSharedKey();
+      view.rewards = await syncByokRewards({
+        userId: user.id,
+        hasEngineKey: Boolean(member.key),
+        saved: view.byok?.saved ?? null,
+        grant: async (externalId, amount) => {
+          if (!shared) return false;
+          const response = await fetch(`${botBaseUrl()}/api/bridge/whop/grant`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-brain-key": shared },
+            body: JSON.stringify({ whopUserId: user.whopId?.trim(), amount, externalId }),
+            signal: AbortSignal.timeout(5_000),
+          });
+          if (!response.ok) return false;
+          const result = await response.json() as { ok?: boolean; granted?: number; credits?: number };
+          if (result.ok !== true || (result.granted !== amount && result.granted !== 0) || typeof result.credits !== "number") return false;
+          view.credits = result.credits;
+          return true;
+        },
+      });
+    } catch {
+      view.rewards = null;
+    }
   } catch (err) {
     if (err instanceof BridgeError) {
       view.error = err.message;

@@ -19,9 +19,8 @@ import { clearStashedRef, readStashedRef, stashRefFromUrl } from "@/lib/ref-stas
  * code), built on the Super Muse base, and their own Muse builds
  * out their Spaces so they hit the ground running.
  *
- * Member page: signed-out visitors see only a Connect card (the
- * bridge pattern); every API is session-authenticated and the flow
- * state is per-member (AppSetting buildflow:<userId>). Research runs
+ * Signed-out visitors can start the intake; the build APIs require a
+ * session and store per-member state (AppSetting buildflow:<userId>). Research runs
  * on the existing background research lane — this page polls.
  */
 
@@ -62,6 +61,18 @@ interface CreateResult {
 
 const step = "rounded-[10px] border border-border bg-card p-5 sm:p-6 space-y-3";
 const label = "font-mono text-[11px] font-semibold tracking-[0.18em] text-primary uppercase";
+const BUILD_INTAKE_STASH = "build:intake";
+
+function readBuildIntake(): { website?: unknown; brandName?: unknown; noWebsite?: unknown } | null {
+  try {
+    const raw = sessionStorage.getItem(BUILD_INTAKE_STASH);
+    if (raw === null) return null;
+    sessionStorage.removeItem(BUILD_INTAKE_STASH);
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
 
 function CopyButton({ text, children }: { text: string; children: React.ReactNode }) {
   const [done, setDone] = useState(false);
@@ -223,14 +234,26 @@ export default function BuildPage() {
   const attributedRef = useRef(false);
 
   useEffect(() => {
+    let active = true;
     stashRefFromUrl();
     void fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => r.json())
-      .then((s: Session) => {
+      .then(async (s: Session) => {
+        if (!active) return;
+        const draft = s.connected ? readBuildIntake() : null;
+        if (draft) {
+          await loadState().catch(() => undefined);
+          if (typeof draft.website === "string") setWebsite(draft.website);
+          if (typeof draft.brandName === "string") setBrandName(draft.brandName);
+          if (typeof draft.noWebsite === "boolean") setNoWebsite(draft.noWebsite);
+        }
         setSession(s);
-        if (s.connected) void loadState();
+        if (s.connected && !draft) void loadState();
       })
-      .catch(() => setSession({ connected: false, admin: false, user: null }));
+      .catch(() => {
+        if (active) setSession({ connected: false, admin: false, user: null });
+      });
+    return () => { active = false; };
   }, [loadState]);
 
   useEffect(() => {
@@ -275,6 +298,16 @@ export default function BuildPage() {
   }
 
   async function startResearch() {
+    if (!session?.connected) {
+      try {
+        sessionStorage.setItem(BUILD_INTAKE_STASH, JSON.stringify({ website, brandName, noWebsite }));
+      } catch {
+        setError("This browser couldn’t keep your answers for sign-in. Allow session storage and try again.");
+        return;
+      }
+      window.location.assign("/api/auth/whop?next=%2Fbuild");
+      return;
+    }
     const data = await call(
       "/api/build-agent/research",
       { method: "POST", body: JSON.stringify({ website: noWebsite ? "" : website, brandName, noWebsite }) },
@@ -310,31 +343,15 @@ export default function BuildPage() {
           <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-label="Loading">
             <Loader2 className="h-4 w-4 animate-spin" />
           </p>
-        ) : !session.connected ? (
-          <>
-          <MuseStartCard />
-          <section className={step}>
-            <p className={label}>Build an agent</p>
-            <h1 className="font-display text-3xl font-black tracking-tight">First, sign in.</h1>
-            <p className="text-muted-foreground leading-relaxed">
-              The build starts from deep research on your business and a short quiz — both tied to your account, so
-              sign in with Whop first. It takes one sitting.
-            </p>
-            <Button asChild>
-              <a href="/api/auth/whop?next=%2Fbuild">
-                Sign in with Whop <ArrowRight className="h-4 w-4 ml-1.5" />
-              </a>
-            </Button>
-          </section>
-          </>
         ) : (
           <>
             <section className="space-y-3">
               <p className={label}>Whop Army · Build an agent</p>
               <h1 className="font-display text-4xl sm:text-5xl font-black leading-[1.02] tracking-tight">We research. You answer 7 questions. Your agent gets built.</h1>
               <p className="text-muted-foreground leading-relaxed">
-                Deep research on your business, a short quiz, and an agent designed from both — then the prompt and
-                bridge code that let your own Muse build out your Spaces, so you hit the ground running.
+                {session.connected
+                  ? "Deep research on your business, a short quiz, and an agent designed from both — then the prompt and bridge code that let your own Muse build out your Spaces, so you hit the ground running."
+                  : "Deep research on your business, a short quiz, and your agent designed from both."}
               </p>
             </section>
 
@@ -344,15 +361,17 @@ export default function BuildPage() {
               </p>
             ) : null}
 
-            <MuseStartCard />
+            {session.connected && <>
+              <MuseStartCard />
 
-            <UpdateTokenCard />
-            <section className={step} aria-label="Your Links">
-              <p className={label}>Your Links</p>
-              <p className="font-semibold">Your saved offer links, on your profile</p>
-              <p className="text-sm text-muted-foreground">See every link your Muse has saved for you through the bridge — the same links your shares and sign-up buttons use.</p>
-              <p><a className="text-sm font-semibold underline underline-offset-4" href="/your-links">View your links</a></p>
-            </section>
+              <UpdateTokenCard />
+              <section className={step} aria-label="Your Links">
+                <p className={label}>Your Links</p>
+                <p className="font-semibold">Your saved offer links, on your profile</p>
+                <p className="text-sm text-muted-foreground">See every link your Muse has saved for you through the bridge — the same links your shares and sign-up buttons use.</p>
+                <p><a className="text-sm font-semibold underline underline-offset-4" href="/your-links">View your links</a></p>
+              </section>
+            </>}
 
             {/* ─── Step 1 · Research ─────────────────────────────── */}
             <section className={step} aria-label="Step 1: research">
@@ -371,6 +390,8 @@ export default function BuildPage() {
                 >
                   {busy === "research" ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : !session.connected ? (
+                    "Continue with Whop"
                   ) : noWebsite ? (
                     "Continue without a website"
                   ) : (
@@ -378,6 +399,9 @@ export default function BuildPage() {
                   )}
                 </Button>
               </div>
+              {!session.connected && (
+                <p className="text-sm text-muted-foreground">You’ll sign in with Whop to save this step and continue. We’ll keep your answers in this tab while you sign in.</p>
+              )}
               <div className="flex items-center gap-2">
                 <Checkbox id="build-no-website" checked={noWebsite} onCheckedChange={(v) => setNoWebsite(v === true)} />
                 <Label htmlFor="build-no-website" className="font-normal">
@@ -421,6 +445,7 @@ export default function BuildPage() {
               ) : null}
             </section>
 
+            {session.connected && <>
             {/* ─── Step 2 · Quiz ─────────────────────────────────── */}
             <section className={step} aria-label="Step 2: quiz">
               <p className={label}>2 · The short quiz — 7 questions</p>
@@ -554,6 +579,7 @@ export default function BuildPage() {
                 </div>
               ) : null}
             </section>
+            </>}
           </>
         )}
 

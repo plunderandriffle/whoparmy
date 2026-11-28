@@ -9,12 +9,14 @@ import { bridgeAgentBrief, permanentAgentBrief } from "@/lib/bridge-agent-brief"
 import { deriveWhopConnection, type WhopConnectionTone } from "@/lib/whop-connection";
 import { deriveWhopHeader } from "@/lib/whop-header";
 import { TelegramLinkCard } from "@/components/factory/telegram-link";
+import type { ByokRewards } from "@/lib/byok-reward";
 
 interface BridgeAccount {
   connected: boolean;
   credits: number | null;
   granted: number;
   period: string | null;
+  rewards?: ByokRewards | null;
   tokens: Array<{ id: string; budgetCredits: number; spentCredits: number; expiresAt: string; active: boolean }>;
   error: string | null;
   errorCode: string | null;
@@ -184,6 +186,24 @@ export default function BridgeCodePage() {
         <CardContent className="space-y-2 text-sm">
           {!account && <p className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Reading your P&amp;R balance…</p>}
           {account?.connected && <p>Balance: <strong>{account.credits === -1 ? "Unlimited" : `${account.credits} credits`}</strong>{account.granted > 0 && <> · {account.granted} granted this cycle</>}{account.period && <> · cycle {account.period.replace("paid:", "")}</>}</p>}
+          {account?.rewards && account.rewards.enabled && account.rewards.total > 0 && (
+            <section aria-labelledby="setup-rewards-title" className="space-y-2 border-t pt-3">
+              <h2 id="setup-rewards-title" className="font-semibold">Setup rewards</h2>
+              <p className="font-medium">Earned {account.rewards.earned} of {account.rewards.total} pieces</p>
+              <p className="text-muted-foreground">Your Muse earns these with you as each connection lands.</p>
+              <ul className="space-y-1">
+                {account.rewards.steps.map(({ key, label, amount, granted }) => (
+                  <li key={key} className="flex items-center justify-between gap-2">
+                    <span>{label}</span>
+                    <span className={granted ? "font-semibold" : "text-muted-foreground"}>
+                      <span aria-hidden="true">{granted ? "✓" : "○"}</span>
+                      <span className="sr-only">{granted ? "Earned" : "Pending"}: </span> +{amount}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {account && !account.connected && <p className="flex items-start gap-2 text-amber-500"><Lock className="mt-0.5 h-4 w-4 shrink-0" />{account.errorCode === "NO_WHOP_ID" ? "Sign in with Whop (not the operator fallback) so your account can be linked to its credits." : account.error ?? "The bridge is not reachable yet."}</p>}
           {account && account.tokens.length > 0 && <div className="space-y-1 pt-2"><p className="font-medium">Bridge tokens</p>{account.tokens.map((t) => <p key={t.id} className="flex items-center justify-between gap-2 text-muted-foreground"><span>{t.active ? "Active" : "Dead"} · spent {t.spentCredits} of {t.budgetCredits} credits · expires {new Date(t.expiresAt).toLocaleDateString()}</span>{t.active && <Button size="sm" variant="ghost" onClick={() => revoke(t.id)}><ShieldOff className="mr-1 h-3.5 w-3.5" /> Revoke</Button>}</p>)}</div>}
         </CardContent>

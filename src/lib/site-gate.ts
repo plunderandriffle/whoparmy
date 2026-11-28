@@ -1,5 +1,5 @@
 import "server-only";
-import type { User } from "@prisma/client";
+import type { Prisma, User } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSessionUserId } from "@/lib/session";
 import { isDesignatedOperator } from "@/lib/auth";
@@ -36,8 +36,8 @@ export async function getSetting(key: string): Promise<string | null> {
   return row?.value ?? null;
 }
 
-export async function setSetting(key: string, value: string): Promise<void> {
-  await db.appSetting.upsert({
+export async function setSetting(key: string, value: string, client: Pick<Prisma.TransactionClient, "appSetting"> = db): Promise<void> {
+  await client.appSetting.upsert({
     where: { key },
     create: { key, value },
     update: { value },
