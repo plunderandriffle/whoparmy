@@ -42,7 +42,7 @@ export interface BridgeByokView {
   mp4QuoteCredits: number | null;
 }
 
-const SAVED_KEYS = ["links", "llm", "giphy", "fish", "herenow", "renderer"] as const;
+export const SAVED_KEYS = ["links", "llm", "giphy", "fish", "herenow", "renderer"] as const;
 type SavedKey = (typeof SAVED_KEYS)[number];
 
 function savedFlag(unlocks: Record<string, unknown>, key: SavedKey): boolean {
