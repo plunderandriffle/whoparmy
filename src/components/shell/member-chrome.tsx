@@ -2,30 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-/**
- * Member chrome — H2 nav demotion (SITE-REDO-SPEC 2026-11-26 §4,
- * Dave's tap 2026-11-26).
- *
- * Member surfaces (Spaces / Build / Rotator / Town / Agents) come OFF
- * the public chrome: the shared header and footer render their member
- * links ONLY for a connected member. A logged-out visitor — including
- * one who lands directly on a member URL — sees the public chrome:
- * logo, the honesty line, and the Connect action (WhopConnect).
- *
- * State comes only from GET /api/auth/session, the same probe
- * WhopConnect and the homepage already use. While the probe is in
- * flight, and on any failure, nothing member-facing renders — the
- * public face is the safe default.
- */
-
 type SessionLike = { connected?: boolean } | null;
+type BridgeAccount = { connected?: boolean; error?: string | null; errorCode?: string | null };
 
 function useConnected(): boolean {
   const [connected, setConnected] = useState(false);
   useEffect(() => {
     let live = true;
     void fetch("/api/auth/session", { cache: "no-store" })
-      .then((r) => r.json())
+      .then((response) => response.ok ? response.json() : null)
       .then((s: SessionLike) => {
         if (live) setConnected(Boolean(s?.connected));
       })
@@ -40,23 +25,39 @@ function useConnected(): boolean {
 }
 
 const NAV = [
-  { href: "/spaces", label: "Spaces" },
-  { href: "/build", label: "Build" },
-  { href: "/bridge-code", label: "Bridge code" },
-  { href: "/town", label: "Town" },
-  { href: "/agents", label: "Agents" },
+  { href: "/#outcomes", label: "Outcomes" },
+  { href: "/bridge-code", label: "My agent" },
 ];
 
 /** The header's member links — connected members only. */
 export function MemberNavLinks() {
   const connected = useConnected();
+  const [setupIncomplete, setSetupIncomplete] = useState(false);
+
+  useEffect(() => {
+    if (!connected) return;
+    const request = new AbortController();
+    void fetch("/api/bridge/account", { cache: "no-store", signal: request.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: { account?: BridgeAccount } | null) => {
+        const account = data?.account;
+        if (request.signal.aborted || account?.connected !== false) return;
+        if (account.errorCode === "NO_WHOP_ID" || (!account.errorCode && !account.error)) {
+          setSetupIncomplete(true);
+        }
+      })
+      .catch(() => {});
+    return () => request.abort();
+  }, [connected]);
+
   if (!connected) return null;
+  const links = setupIncomplete ? [...NAV, { href: "/build", label: "Continue setup" }] : NAV;
   return (
     <>
-      {NAV.map((item) => (
+      {links.map((item) => (
         <a
           key={item.href}
-          className="hidden text-muted-foreground transition-colors hover:text-foreground md:inline"
+          className="text-muted-foreground transition-colors hover:text-foreground"
           href={item.href}
         >
           {item.label}
@@ -70,16 +71,15 @@ const FOOTER_COLUMNS: { title: string; links: { href: string; label: string }[] 
   {
     title: "Explore",
     links: [
-      { href: "/spaces", label: "Spaces" },
-      { href: "/build", label: "Build an agent" },
+      { href: "/#outcomes", label: "Outcomes" },
+      { href: "/#how-it-works", label: "How it works" },
     ],
   },
   {
     title: "Start",
     links: [
-      { href: "/town", label: "Agent Town" },
-      { href: "/agents", label: "Agents" },
-      { href: "/how", label: "How it works" },
+      { href: "/build", label: "Start your agent" },
+      { href: "/bridge-code", label: "My agent" },
       { href: "/api/auth/whop", label: "Connect" },
     ],
   },
