@@ -20,8 +20,7 @@ export function SiteFooter() {
             PLUNDER <span className="text-primary">&amp;</span> RIFFLE
           </p>
           <p className="mt-3 max-w-xs leading-relaxed">
-            The content engine behind your business. Your agent works on your own credits, and nothing goes out without
-            your say-so.
+            Your agent makes pieces for your business. Nothing goes out without your say-so.
           </p>
         </div>
         <MemberFooterColumns />
