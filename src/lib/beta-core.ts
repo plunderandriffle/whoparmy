@@ -32,6 +32,33 @@ export function enrollmentLaneWrite(value: unknown, existing: boolean): { create
   const lane = validLane(value);
   return { create: existing ? null : lane, update: lane ?? undefined };
 }
+export function betaCreateLane(laneWrite: { create: BetaLane | null; update?: BetaLane }, existingLane?: string | null): BetaLane {
+  // The upsert's create branch must ALWAYS carry a valid lane: Prisma
+  // validates both branches before choosing one, so create.lane = null
+  // (the existing-tester switch shape) fails the whole call before the
+  // update branch can run (Dave's "Error switching to muse", 2026-11-28).
+  // This fallback never CHOOSES a lane for a real create — the route
+  // refuses a lane-less fresh enroll before reaching the upsert; when a
+  // tester row exists the create branch never executes.
+  return laneWrite.create ?? laneWrite.update ?? validLane(existingLane) ?? "muse";
+}
+export function betaTesterUpsertArgs(input: {
+  userId: string;
+  createLane: BetaLane;
+  updateLane?: BetaLane;
+  create: { museMail: string; deliveryEmail: string; niche: string; boardHandle: string; businessName: string; businessWebsite?: string };
+  update: { deliveryEmail?: string; museMail?: string; niche?: string; boardHandle?: string; businessName?: string; businessWebsite?: string };
+}) {
+  // BetaTester.user is a REQUIRED relation: the create branch must
+  // connect it (scalar userId alone validates only when every other
+  // required field is also valid, and connect+scalar together is
+  // rejected — proven against a real Prisma client, 2026-11-28).
+  return {
+    where: { userId: input.userId },
+    create: { user: { connect: { id: input.userId } }, lane: input.createLane, ...input.create },
+    update: { ...(input.updateLane ? { lane: input.updateLane } : {}), ...input.update },
+  };
+}
 export function deliveryEmailRequired(lane: unknown, value: unknown): boolean { return lane === "agent37" && (typeof value !== "string" || !value.trim()); }
 
 export function validateBountyCents(value: number): number { if (!Number.isInteger(value) || value < 20) throw new Error("Bounty must be at least 20 cents."); return value; }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSessionUserId } from "@/lib/session";
-import { approveReport, day0Verifiable, deliveryEmailRequired, enrollmentLaneWrite, evaluateUnlock, validEmailShape, validateBountyCents, validateSpend } from "@/lib/beta-core";
+import { approveReport, betaCreateLane, betaTesterUpsertArgs, day0Verifiable, deliveryEmailRequired, enrollmentLaneWrite, evaluateUnlock, validEmailShape, validateBountyCents, validateSpend } from "@/lib/beta-core";
 import { getSessionOperator } from "@/lib/site-gate";
 import { startResearchJob, getResearchJob } from "@/lib/research-jobs";
 import { getPlan } from "@/lib/plans";
@@ -156,11 +156,16 @@ export async function POST(req: NextRequest) {
       if (deliveryEmailRequired(effectiveLane, deliveryEmail)) return json({ error: "The Agent37 lane needs your email address — everything is created for it. Add it and enroll again." }, 400);
       if (effectiveLane === "agent37" && deliveryEmail && !validEmailShape(deliveryEmail)) return json({ error: "That email address doesn't look right — check it and try again. Everything on this lane is created for that address." }, 400);
       // Lane switching is ungated after research/claims — acceptable for beta (Joe review, A2 note).
-      const t = await db.betaTester.upsert({
-        where: { userId: c.userId },
+      // Upsert args come from betaTesterUpsertArgs: the create branch
+      // must connect the required user relation and always carry a
+      // valid lane — Prisma validates both branches up front, so a
+      // null create lane killed lane switches for existing testers
+      // ("Argument user is missing", 2026-11-28).
+      const t = await db.betaTester.upsert(betaTesterUpsertArgs({
+        userId: c.userId,
+        createLane: betaCreateLane(lane, c.tester?.lane),
+        updateLane: lane.update,
         create: {
-          userId: c.userId,
-          lane: lane.create as string,
           museMail: typeof b.museMail === "string" ? b.museMail : "",
           deliveryEmail: effectiveLane === "agent37" ? deliveryEmail : "",
           niche: typeof b.niche === "string" ? b.niche : "",
@@ -169,7 +174,6 @@ export async function POST(req: NextRequest) {
           businessWebsite: typeof b.businessWebsite === "string" ? b.businessWebsite : undefined,
         },
         update: {
-          ...(lane.update ? { lane: lane.update } : {}),
           ...(effectiveLane === "agent37" && deliveryEmail ? { deliveryEmail } : {}),
           museMail: typeof b.museMail === "string" ? b.museMail : undefined,
           niche: typeof b.niche === "string" ? b.niche : undefined,
@@ -177,7 +181,7 @@ export async function POST(req: NextRequest) {
           businessName: typeof b.businessName === "string" ? b.businessName : undefined,
           businessWebsite: typeof b.businessWebsite === "string" ? b.businessWebsite : undefined,
         },
-      });
+      }));
       return json({ tester: t }, 201);
     }
 
